@@ -19,29 +19,52 @@
     // Defaults
     
     function setParams (params={}){
-        this.params = params;
+        notilib.params = params;
         return notilib;
     }
-    function notitajax(){
+    function notiajax(){
+       
+        this.xmlHttp = new XMLHttpRequest();
+        this.stop =false;
         me = this;
-        this.intercalValue=  setInterval(function(){ 
+        let i = 0;
+        me.i = i;
+      
+        callXml(this.xmlHttp,me);
+      
+        function callXml(xmlHttp,me){
+          xmlHttp.onreadystatechange = function() { 
+            if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                callback(JSON.parse(xmlHttp.responseText),me);
+        }
+        xmlHttp.open(me.params.method, me.params.url, true); // true for asynchronous 
+        xmlHttp.send(null);       
+        }
+        function callback(msg,me){
+          console.dir(1);
+          if(me.stop){
+            me.xmlHttp.abort();
+            return;
+          }else{
+            setTimeout(function () {
+              me.i++;
+              if(me.i == 100)
+              {
+                setTimeout(function () {callXml(me.xmlHttp,me);},[me],10000)
+              }else
+                callXml(me.xmlHttp,me); // will be executed after the specified time
+           },[me], 30000);
+          
+          }
         
-            $.ajax({
-                method: me.params.method,
-                url: me.params.url,
-                data: me.params.data != undefined ? me.params.data:[]
-              })
-                .done(function( msg ) {     
-                                                       
-                    me.params.callback(msg);
-                });
-        }, [me],1000);
+        }
+  
         
     }
     let notilib = { };
-
+   
     function notistopajax()  {
-        clearInterval(intercalValue);
+        this.stop = true;
     }
     
     function notifyMe() {
@@ -73,10 +96,12 @@
         // At last, if the user has denied notifications, and you 
         // want to be respectful there is no need to bother them any more.
       }
-    notilib.notifyMe =   notifyMe;
+    notilib.notifyMe =   notifyMe; 
     notilib.setParams = setParams;
-    notilib.notitajax = notitajax;
+    notilib.notiajax = notiajax;
     notilib.notistopajax = notistopajax;
+    notilib.stop = false;
+    notilib.params = {};
     notilib.version = '0.1.1';
     notilib.random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   
